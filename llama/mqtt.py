@@ -31,7 +31,14 @@ def _encode_action_type(routes, action_type):
 
     :returns: The routed MQTT topic
     """
-    return ""
+    if not "/" in action_type:
+        return action_type # nothing to do here
+
+    for handle, route in routes.items():
+        if action_type.startswith("@" + handle):
+            return action_type.replace("@" + handle, route)
+
+    return action_type
 
 
 def _decode_action_type(routes, topic):
@@ -46,7 +53,11 @@ def _decode_action_type(routes, topic):
 
     :returns: The action type
     """
-    return ""
+    for handle, route in routes.items():
+        if topic.startswith(route):
+            return "@" + topic.replace(route, handle)
+
+    return topic
 
 
 def _decode_action(routes, topic, payload):
