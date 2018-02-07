@@ -18,7 +18,9 @@ def message_decode_error_result(topic, payload, error):
 
 
 def message_decode_error(topic, payload, error):
-    payload = str(payload, "utf-8")
+    if type(payload) != str:
+        payload = str(payload, "utf-8")
+
     error = str(error)
     return {
         "type": MESSAGE_DECODE_ERROR,
