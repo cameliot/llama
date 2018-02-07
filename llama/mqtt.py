@@ -120,7 +120,7 @@ def _on_message(messages, _client, _obj, msg):
     messages.put(msg)
 
 
-def _receive(messages, routes, timeout=None):
+def _receive(messages, routes, timeout=None, once=False):
     """
     General receive function
 
@@ -132,21 +132,25 @@ def _receive(messages, routes, timeout=None):
 
     :returns: The action or None if queue empty an non blocking
     """
-    try:
-        msg = messages.get(timeout=timeout)
-        topic = msg.topic
-        payload = msg.payload
+    while True:
+        try:
+            msg = messages.get(timeout=timeout)
+            topic = msg.topic
+            payload = msg.payload
 
-        # Decode messages into action
-        return _decode_action(routes, topic, payload)
+            # Decode messages into action
+            yield _decode_action(routes, topic, payload)
 
-    except queue.Empty:
-        return None
+        except queue.Empty:
+            yield None
 
-    except MessageDecodeError as e:
-        logging.warning("Could not decode incoming message: {}".format(e))
+        except MessageDecodeError as e:
+            logging.warning("Could not decode incoming message: {}".format(e))
 
-        return llama_actions.message_decode_error_result(topic, payload, e)
+            yield llama_actions.message_decode_error_result(topic, payload, e)
+
+        if once:
+            return
 
 
 def _dispatch(client, routes, action):
