@@ -55,3 +55,6 @@ def test_encode_action_type():
         topic = mqtt._encode_action_type(routes, action_type)
         assert topic == result
 
+
+
+

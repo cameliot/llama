@@ -73,12 +73,12 @@ def _decode_action(routes, topic, payload):
     :returns: An action
     """
     try:
-        action_payload = json.loads(msg.payload)
-    except Exception(e):
+        action_payload = json.loads(str(payload, "utf-8"))
+    except Exception as e:
         raise MessageDecodeError(str(e))
 
     # Apply routing to topic
-    action_type = _decode_action_type(routes, msg.topic)
+    action_type = _decode_action_type(routes, topic)
 
     # Create action
     action = {
@@ -87,6 +87,20 @@ def _decode_action(routes, topic, payload):
     }
 
     return action
+
+def _on_connect(routes, client, userdata, flags, rc):
+    # Subscribe to queue
+    for _, route in routes.items():
+        client.subscribe("{}/#".format(route))
+        logging.info("Receiving actions on topic {}/#".format(route))
+
+
+def _on_disconnect(client, userdata, rc):
+    logging.warning("MQTT client disconnected.")
+
+
+def _log(_client, userdata, level, buf):
+    logging.debug("MQTT: {}".format(buf))
 
 
 def _on_message(messages, _client, _obj, msg):
@@ -103,7 +117,7 @@ def _on_message(messages, _client, _obj, msg):
     :type msg: paho.mqtt.client.MqttMessage
     """
     logging.debug("Incoming MQTT message: {}".format(msg))
-    actions.put(msg)
+    messages.put(msg)
 
 
 def _receive(messages, routes, timeout=None):
@@ -119,7 +133,7 @@ def _receive(messages, routes, timeout=None):
     :returns: The action or None if queue empty an non blocking
     """
     try:
-        msg = messages.get(timeout)
+        msg = messages.get(timeout=timeout)
         topic = msg.topic
         payload = msg.payload
 
@@ -157,7 +171,7 @@ def _dispatch(client, routes, action):
         logging.error("Could not encode payload: {}".format(e))
         return
 
-    topic = _encode_topic(routes, action.get("type"))
+    topic = _encode_action_type(routes, action.get("type"))
 
     ticket = client.publish(topic, payload)
     ticket.wait_for_publish()
@@ -184,7 +198,6 @@ def connect(address, routes):
     :type routes: dict
 
     :returns: The receive and dispatch functions
-    :type returns: tuple of function
     """
     try:
         host, port = address.split(":", 1)
@@ -204,7 +217,7 @@ def connect(address, routes):
     # Client Callbacks
     client.on_log = _log
     client.on_message = functools.partial(_on_message, messages_queue)
-    client.on_connect = functools.partial(_on_connect, base_topic)
+    client.on_connect = functools.partial(_on_connect, routes)
     client.on_disconnect = _on_disconnect
 
     # Open connection
@@ -221,5 +234,5 @@ def connect(address, routes):
     # Create dispatch function
     dispatch = functools.partial(_dispatch, client, routes)
 
-    return receive, dispatch
+    return dispatch, receive
 
