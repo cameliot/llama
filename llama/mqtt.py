@@ -132,25 +132,56 @@ def _receive(messages, routes, timeout=None, once=False):
 
     :returns: The action or None if queue empty an non blocking
     """
+    if once:
+        # We do not return a generator, we retrieve the result
+        return _receive_once(messages, routes, timeout)
+
+    return _receive_actions(messages, routes, timeout)
+
+
+def _receive_once(messages, routes, timeout):
+    """
+    Receive a single action.
+
+    :param actions: Incoming actions
+    :type actions: queue.Queue
+
+    :param timeout: Set a timeout to make it non blocking
+    :type timeout: int | None
+    """
+    try:
+        msg = messages.get(timeout=timeout)
+        topic = msg.topic
+        payload = msg.payload
+
+        # Decode messages into action
+        return _decode_action(routes, topic, payload)
+
+    except queue.Empty:
+        return None
+
+    except MessageDecodeError as e:
+        logging.warning("Could not decode incoming message: {}".format(e))
+
+        return llama_actions.message_decode_error_result(topic, payload, e)
+
+    return None
+
+
+def _receive_actions(messages, routes, timeout):
+    """
+    Generator for receiving incoming actions.
+
+    :param actions: Incoming actions
+    :type actions: queue.Queue
+
+    :param timeout: Set a timeout to make it non blocking
+    :type timeout: int | None
+
+    :returns: Never returns, yields action or None as generator
+    """
     while True:
-        try:
-            msg = messages.get(timeout=timeout)
-            topic = msg.topic
-            payload = msg.payload
-
-            # Decode messages into action
-            yield _decode_action(routes, topic, payload)
-
-        except queue.Empty:
-            yield None
-
-        except MessageDecodeError as e:
-            logging.warning("Could not decode incoming message: {}".format(e))
-
-            yield llama_actions.message_decode_error_result(topic, payload, e)
-
-        if once:
-            return
+        yield _receive_once(messages, routes, timeout)
 
 
 def _dispatch(client, routes, action):
