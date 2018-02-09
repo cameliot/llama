@@ -54,3 +54,8 @@ or (if specified) the `timeout` will occure.
 In case decoding the MQTT payload failed, an `llama.actions.MESSAGE_DECODE_ERROR_RESULT`
 is received.
 
+### Example
+
+For a simple working example please checkout the [examples/reverser/reverser.py](https://github.com/cameliot/llama/blob/master/examples/reverser/reverser.py) string reversal service.
+
+
