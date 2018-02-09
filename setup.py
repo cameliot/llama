@@ -24,6 +24,7 @@ def read_and_convert(filename):
         return str(p.stdout.read(), "utf-8")
     except:
         # Fallback
+        print("WARNING: Converting README.md failed, is pandoc installed?")
         return read_file(filename)
 
 
