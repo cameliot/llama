@@ -45,7 +45,7 @@ The `receive` function can be used in a blocking and non-blocking
 fashion by passing a `timeout` in seconds (e.g. `receive(timeout=0.25)`
 and it can be used in a one shot kind of way, by passing `once=True`.
 
-This way receive(once=True) will block until an action is received,
+This way `receive(once=True)` will block until an action is received,
 or (if specified) the `timeout` will occure.
 
 
