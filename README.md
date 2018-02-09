@@ -13,6 +13,13 @@ easily.
 Also see [Alpaca](https://github.com/cameliot/alpaca), the Go implementation
 of this library.
 
+## Installation
+
+The package is available via pypi as `llama-mqtt`, so for installation
+just type:
+
+    pip3 install llama-mqtt
+
 ## How to use
 
 Creating a new service in your network
