@@ -200,6 +200,9 @@ def _dispatch(client, routes, action):
     :param action: An action
     :type action: dict
     """
+    if not action:
+        return # nothing to do here
+
     try:
         payload = json.dumps(action.get("payload")).encode("utf-8")
     except Exception as e:
